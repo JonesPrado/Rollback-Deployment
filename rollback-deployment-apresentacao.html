@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rollback Deployment — Apresentação</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c10;
+    --surface:   #111318;
+    --border:    #1e2230;
+    --accent:    #00e5a0;
+    --accent2:   #ff6b35;
+    --accent3:   #4a9eff;
+    --warn:      #ffcc00;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --code-bg:   #0d1117;
+    --blocked:   #ff4757;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: .4;
+  }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,12,16,.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: .9rem 3rem;
+    overflow-x: auto;
+  }
+  nav .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: -.01em;
+    white-space: nowrap;
+  }
+  nav .logo span { color: var(--text); }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .8rem;
+    font-weight: 500;
+    transition: color .2s;
+    white-space: nowrap;
+  }
+  nav a:hover { color: var(--accent); }
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8rem 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(0,229,160,.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp .6s .1s forwards;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.03em;
+    max-width: 800px;
+    opacity: 0;
+    animation: fadeUp .7s .2s forwards;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero-sub {
+    max-width: 620px;
+    color: var(--muted);
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    opacity: 0;
+    animation: fadeUp .7s .35s forwards;
+  }
+  .hero-sub strong { color: var(--text); }
+  .hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp .7s .5s forwards;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .9rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 500;
+    border: 1px solid;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chip-green  { border-color: var(--accent);  color: var(--accent);  background: rgba(0,229,160,.07); }
+  .chip-orange { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,53,.07); }
+  .chip-blue   { border-color: var(--accent3); color: var(--accent3); background: rgba(74,158,255,.07); }
+  .chip-warn   { border-color: var(--warn);    color: var(--warn);    background: rgba(255,204,0,.07); }
+
+  section {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 5rem 3rem;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    margin-bottom: .8rem;
+  }
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    margin-bottom: 1.5rem;
+  }
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 2rem 0 .7rem;
+    color: var(--text);
+  }
+  p { color: #94a3b8; margin-bottom: 1rem; }
+  p strong { color: var(--text); }
+  p em { color: var(--accent); font-style: normal; }
+  ul.plain { list-style: none; margin: 1.2rem 0; display: grid; gap: .6rem; }
+  ul.plain li {
+    color: #94a3b8;
+    font-size: .92rem;
+    padding-left: 1.3rem;
+    position: relative;
+  }
+  ul.plain li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  ul.plain li strong { color: var(--text); }
+
+  /* FLOW */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 2.5rem 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    flex: 1;
+    min-width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1rem;
+    text-align: center;
+    position: relative;
+  }
+  .flow-step + .flow-step { margin-left: 2rem; }
+  .flow-step + .flow-step::before {
+    content: '→';
+    position: absolute;
+    left: -1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+  .flow-step .step-icon { font-size: 1.4rem; margin-bottom: .4rem; }
+  .flow-step .step-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .flow-step .step-desc { font-size: .78rem; color: var(--muted); margin-top: .3rem; }
+  .flow-step.highlight { border-color: var(--accent); }
+  .flow-step.warn { border-color: var(--warn); }
+  .flow-step.warn .step-title { color: var(--warn); }
+  .flow-step.block { border-color: var(--blocked); }
+  .flow-step.block .step-title { color: var(--blocked); }
+  .flow-step.blue { border-color: var(--accent3); }
+  .flow-step.blue .step-title { color: var(--accent3); }
+
+  /* LAYERS TABLE */
+  .layers-wrap { overflow-x: auto; margin: 2rem 0; border-radius: 12px; border: 1px solid var(--border); }
+  table.layers {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    font-size: .84rem;
+    min-width: 640px;
+  }
+  table.layers th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    text-align: left;
+    padding: .9rem 1.1rem;
+    background: #0a0f18;
+    border-bottom: 1px solid var(--border);
+  }
+  table.layers td {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    color: #94a3b8;
+    vertical-align: top;
+  }
+  table.layers tr:last-child td { border-bottom: none; }
+  table.layers td.layer-name { color: var(--text); font-weight: 600; white-space: nowrap; }
+  table.layers code { font-family: 'JetBrains Mono', monospace; font-size: .78rem; color: var(--accent3); background: rgba(74,158,255,.08); padding: .1rem .35rem; border-radius: 4px; }
+  .risk-low  { color: var(--accent) !important; font-weight: 600; }
+  .risk-mid  { color: var(--warn) !important; font-weight: 600; }
+  .risk-high { color: var(--blocked) !important; font-weight: 600; }
+
+  /* CODE */
+  .code-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: #0a0f18;
+  }
+  .code-header .filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    color: var(--muted);
+  }
+  .code-header .lang-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    background: rgba(0,229,160,.1);
+    color: var(--accent);
+  }
+  pre {
+    padding: 1.4rem 1.6rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    line-height: 1.7;
+    color: #cdd6f4;
+  }
+  .kw  { color: #cba6f7; }
+  .fn  { color: #89b4fa; }
+  .str { color: #a6e3a1; }
+  .cm  { color: #585b70; font-style: italic; }
+  .num { color: #fab387; }
+  .var { color: #f38ba8; }
+  .dec { color: #f9e2af; }
+
+  /* CALLOUT */
+  .callout {
+    border-left: 3px solid;
+    padding: 1rem 1.3rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1.5rem 0;
+    font-size: .9rem;
+  }
+  .callout-info  { border-color: var(--accent3); background: rgba(74,158,255,.06); }
+  .callout-warn  { border-color: var(--warn);    background: rgba(255,204,0,.06); }
+  .callout-block { border-color: var(--blocked); background: rgba(255,71,87,.06); }
+  .callout-ok    { border-color: var(--accent);  background: rgba(0,229,160,.06); }
+  .callout .callout-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .4rem;
+  }
+  .callout-info  .callout-title { color: var(--accent3); }
+  .callout-warn  .callout-title { color: var(--warn); }
+  .callout-block .callout-title { color: var(--blocked); }
+  .callout-ok    .callout-title { color: var(--accent); }
+  .callout p { margin: 0; color: #94a3b8; }
+  .callout p + p { margin-top: .6rem; }
+
+  /* CHANGES LIST (steps) */
+  .changes-list {
+    list-style: none;
+    display: grid;
+    gap: .8rem;
+    margin: 1.5rem 0;
+  }
+  .changes-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-size: .88rem;
+    align-items: start;
+  }
+  .change-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    background: rgba(0,229,160,.1);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: .2rem .5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    height: fit-content;
+  }
+  .change-content strong {
+    display: block;
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: .3rem;
+    font-family: 'Syne', sans-serif;
+  }
+  .change-content p { margin: 0; font-size: .84rem; }
+
+  /* FN CARDS */
+  .fn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .fn-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    transition: border-color .2s;
+  }
+  .fn-card:hover { border-color: var(--accent); }
+  .fn-card .fn-sig {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    color: var(--accent);
+    margin-bottom: .6rem;
+    font-weight: 500;
+  }
+  .fn-card .fn-desc { font-size: .85rem; color: #94a3b8; margin: 0; }
+
+  /* EXAMPLE BOX (case studies) */
+  .example-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  .example-header {
+    padding: .8rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .74rem;
+    color: var(--muted);
+    background: #0a0f18;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .example-header .ex-badge {
+    background: rgba(255,107,53,.12);
+    color: var(--accent2);
+    border-radius: 4px;
+    padding: .1rem .45rem;
+    font-size: .65rem;
+  }
+  .example-body { padding: 1.2rem 1.4rem; }
+  .example-body p { font-size: .88rem; margin-bottom: .9rem; }
+  .example-body p:last-child { margin-bottom: 0; }
+  .example-body .stat {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--blocked);
+    background: rgba(255,71,87,.1);
+    padding: .05rem .4rem;
+    border-radius: 4px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.3rem;
+    text-align: center;
+  }
+  .stat-card .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.7rem;
+    color: var(--blocked);
+  }
+  .stat-card .stat-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-top: .3rem;
+  }
+
+  /* CONSEQUENCES GRID */
+  .cons-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
+  .cons-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blocked);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.2rem;
+  }
+  .cons-icon { font-size: 1.3rem; }
+  .cons-card strong { display: block; color: var(--text); font-family: 'Syne', sans-serif; margin-bottom: .3rem; }
+  .cons-card p { margin: 0; font-size: .85rem; }
+
+  /* CLOSING */
+  .closing {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 2rem 2rem;
+    margin: 2rem 0 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.4rem;
+    align-items: start;
+  }
+  .closing-icon { font-size: 2rem; }
+  .closing-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    color: var(--accent);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: .4rem;
+  }
+  .closing-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: .5rem;
+  }
+  .closing-desc { color: #94a3b8; font-size: .88rem; margin: 0; }
+
+  .sources { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px dashed var(--border); }
+  .sources .section-label { margin-bottom: .6rem; }
+  .sources a {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent3);
+    text-decoration: none;
+    margin-bottom: .35rem;
+    word-break: break-all;
+    opacity: .75;
+  }
+  .sources a:hover { opacity: 1; text-decoration: underline; }
+
+  footer {
+    text-align: center;
+    padding: 3rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .8rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 720px) {
+    .flow-step + .flow-step { margin-left: 0; margin-top: 1.4rem; }
+    .flow-step + .flow-step::before { content: '↓'; left: 50%; top: -1.2rem; transform: translateX(-50%); }
+    section { padding: 3.5rem 1.4rem; }
+    .hero { padding: 7rem 1.4rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">rollback<span>_deployment</span></div>
+  <a href="#contexto">Contexto</a>
+  <a href="#usos">Onde é usado</a>
+  <a href="#camadas">4 Camadas</a>
+  <a href="#kubernetes">Kubernetes</a>
+  <a href="#runtime">Dados &amp; etcd</a>
+  <a href="#gitops">GitOps</a>
+  <a href="#aplicar">Como aplicar</a>
+  <a href="#inventra">Inventra</a>
+  <a href="#trabalho">No trabalho</a>
+  <a href="#consequencias">Consequências</a>
+  <a href="#casos">Casos reais</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">// Trabalho de DevOps — Rollback Deployment</div>
+  <h1>Voltar para trás<br>sem <em>quebrar tudo</em></h1>
+  <p class="hero-sub">Rollback Deployment é <strong>o processo de retornar uma aplicação para uma versão anterior quando a nova versão apresenta algum problema</strong> — e a diferença entre um incidente de 5 minutos e um prejuízo de milhões.</p>
+  <div class="hero-chips">
+    <span class="chip chip-green">✦ Kubernetes</span>
+    <span class="chip chip-blue">✦ GitOps / ArgoCD</span>
+    <span class="chip chip-orange">✦ CI/CD</span>
+    <span class="chip chip-warn">✦ Expand-Contract</span>
+    <span class="chip chip-green">✦ Blue-Green / Canary</span>
+    <span class="chip chip-blue">✦ Disaster Recovery</span>
+  </div>
+</div>
+
+<!-- SEÇÃO 0: FLUXO GITOPS -->
+<section id="fluxo" style="border-top:none; padding-top:0;">
+  <div class="section-label">// 00 — visão geral</div>
+  <h2>O caminho de um rollback via GitOps</h2>
+  <p>Antes de entrar na teoria, veja o ciclo completo de uma reversão em um ambiente real com Kubernetes + ArgoCD — do alerta de incidente até a produção estabilizada de novo.</p>
+
+  <div class="flow">
+    <div class="flow-step block">
+      <div class="step-icon">🚨</div>
+      <div class="step-title">Incidente detectado</div>
+      <div class="step-desc">Monitoramento alerta sobre falha na versão nova.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-icon">📝</div>
+      <div class="step-title">Editar manifest</div>
+      <div class="step-desc">Tag da imagem volta para a versão estável anterior.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-icon">🔀</div>
+      <div class="step-title">Pull Request</div>
+      <div class="step-desc">Revisão rápida da alteração de tag pelo time.</div>
+    </div>
+    <div class="flow-step blue">
+      <div class="step-icon">🔄</div>
+      <div class="step-title">ArgoCD sincroniza</div>
+      <div class="step-desc">Detecta o drift e recria os Pods na versão antiga.</div>
+    </div>
+    <div class="flow-step highlight">
+      <div class="step-icon">✅</div>
+      <div class="step-title">Produção validada</div>
+      <div class="step-desc">Sistema volta a operar. Incidente mitigado.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Git é a fonte da verdade</div>
+    <p>No modelo GitOps, o rollback nunca é um comando manual dentro do cluster — é uma <strong>operação Git</strong> (reverter um commit no repositório de configuração). O ArgoCD apenas observa esse repositório e faz o cluster convergir para o que está escrito nele.</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 1: CONTEXTUALIZAÇÃO -->
+<section id="contexto">
+  <div class="section-label">// 01 — contextualização</div>
+  <h2>O que é rollback, afinal?</h2>
+  <p>Para entender rollback, primeiro é preciso entender <strong>deploy</strong>: é o processo de colocar uma nova versão de um sistema em funcionamento para os usuários. Um sistema está na versão 1.0, os desenvolvedores lançam a 2.0 — ela passa por testes e depois é enviada para produção, o ambiente onde os usuários de fato utilizam o sistema.</p>
+  <p>O problema é que uma nova versão pode apresentar erros: falhas no login, problemas em pagamentos, funcionalidades que deixam de funcionar. Quando isso acontece, a equipe pode realizar um <strong>rollback</strong> — fazer o sistema voltar para uma versão anterior que estava funcionando, saindo da 2.0 e retornando para a 1.0. Isso recupera a estabilidade rapidamente enquanto a equipe investiga e corrige o problema.</p>
+  <p>Em DevOps, o rollback importa porque não basta colocar novas versões em produção rapidamente — é preciso também ter uma forma <em>segura</em> de recuperar o sistema quando alguma alteração dá errado.</p>
+
+  <div class="callout callout-ok">
+    <div class="callout-title">Analogia — Minecraft</div>
+    <p>Imagine que você construiu uma cidade inteira e, antes de uma grande alteração, criou um backup do mundo. Se depois você perceber que destruiu uma parte importante da cidade, pode restaurar o backup e voltar ao estado anterior.</p>
+    <p>O rollback funciona de forma parecida: uma nova versão é instalada, algo dá errado, e o sistema retorna para a versão anterior que estava funcionando. A diferença é que, em sistemas reais, o rollback pode envolver não apenas código, mas também <strong>configurações, containers, bancos de dados</strong> e outros componentes da aplicação.</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 2: ONDE É USADO / PRA QUE SERVE -->
+<section id="usos">
+  <div class="section-label">// 02 — aplicações</div>
+  <h2>Onde é usado e pra que serve</h2>
+
+  <h3>1. Onde é usado</h3>
+  <ul class="plain">
+    <li><strong>Kubernetes</strong> — mecanismo nativo via <code style="font-family:'JetBrains Mono',monospace;color:var(--accent3);background:rgba(74,158,255,.08);padding:.1rem .35rem;border-radius:4px;">kubectl rollout undo</code>. É o caso mais estudado e documentado.</li>
+    <li><strong>GitOps / ArgoCD</strong> — rollback tratado como operação Git (reverter commit no repositório de configuração), não como comando manual no cluster.</li>
+    <li><strong>CI/CD em geral</strong> — GitLab CI, Jenkins, Spinnaker também suportam rollback automatizado ou manual quando um deploy falha.</li>
+    <li><strong>Serverless / PaaS</strong> — Heroku, AWS Lambda, Vercel, Netlify guardam versões anteriores prontas pra reativação.</li>
+    <li><strong>Bancos de dados / migrações</strong> — camada separada, tratada com técnicas específicas (expand-contract), não é um "desfazer" simples.</li>
+    <li><strong>Estratégias de deploy</strong> — Blue-Green e Canary são desenhadas para tornar o rollback quase instantâneo (troca de roteamento, não reversão de código).</li>
+  </ul>
+
+  <h3>2. Pra que serve</h3>
+  <ul class="plain">
+    <li><strong>Recuperação rápida de incidentes</strong> — reverter sem precisar corrigir código sob pressão.</li>
+    <li><strong>Redução de MTTR</strong> (tempo médio de recuperação) — reverter costuma ser mais rápido que debugar em produção.</li>
+    <li><strong>Segurança operacional</strong> — dá confiança para deployar com mais frequência.</li>
+    <li><strong>Auditoria e histórico</strong> — permite entender o que mudou entre versões.</li>
+  </ul>
+</section>
+
+<!-- SEÇÃO 3: AS 4 CAMADAS -->
+<section id="camadas">
+  <div class="section-label">// 03 — modelo consolidado</div>
+  <h2>As 4 camadas de rollback</h2>
+  <p>Nem todo rollback custa igual. A pesquisa consolida o tema em quatro camadas — quanto mais perto do dado real do usuário, mais caro e arriscado fica reverter.</p>
+
+  <div class="layers-wrap">
+    <table class="layers">
+      <tr>
+        <th>Camada</th>
+        <th>O que reverte</th>
+        <th>Mecanismo</th>
+        <th>Custo / risco</th>
+      </tr>
+      <tr>
+        <td class="layer-name">1. Código-fonte (Git)</td>
+        <td>Histórico de commits</td>
+        <td><code>git revert</code> / <code>git reset</code></td>
+        <td class="risk-low">Baixíssimo</td>
+      </tr>
+      <tr>
+        <td class="layer-name">2. Deployment / Imagem (Kubernetes)</td>
+        <td>Qual ReplicaSet está ativo</td>
+        <td><code>kubectl rollout undo</code> — troca de ponteiro, não reconstrói nada</td>
+        <td class="risk-low">Baixo, mas limitado pelo <code>revisionHistoryLimit</code> (padrão: 10 revisões)</td>
+      </tr>
+      <tr>
+        <td class="layer-name">3. etcd (estado do cluster)</td>
+        <td>Todo o estado administrativo (Deployments, Services, Secrets, ConfigMaps)</td>
+        <td><code>etcdctl snapshot save/restore</code> — exige parar apiserver e etcd</td>
+        <td class="risk-high">Alto — afeta o cluster inteiro. Usado só em disaster recovery</td>
+      </tr>
+      <tr>
+        <td class="layer-name">4. Dados de runtime (banco / volumes)</td>
+        <td>Dados gerados durante a execução da aplicação</td>
+        <td>Padrão <strong>expand-contract</strong> (expandir → migrar → contrair)</td>
+        <td class="risk-high">Alto — reverter uma etapa é garantido; reverter várias de uma vez, não</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Resumo do padrão</div>
+    <p>As camadas 1 e 2 são baratas e quase sem risco — é mudança de referência/metadado. As camadas 3 e 4 são caras e arriscadas: a 3 porque afeta o cluster inteiro, a 4 porque dados reais de usuários não são simplesmente "desfeitos".</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 4: KUBERNETES -->
+<section id="kubernetes">
+  <div class="section-label">// 04 — detalhe técnico</div>
+  <h2>Kubernetes — o rollback da Camada 2</h2>
+  <ul class="plain">
+    <li>Cada mudança de Deployment cria um <strong>novo ReplicaSet</strong>; o Kubernetes mantém histórico de revisões.</li>
+    <li><code style="font-family:'JetBrains Mono',monospace;color:var(--accent3);background:rgba(74,158,255,.08);padding:.1rem .35rem;border-radius:4px;">kubectl rollout undo</code> não reconstrói containers nem baixa imagem de novo — apenas <strong>troca o ponteiro</strong> do Deployment para o ReplicaSet anterior.</li>
+    <li>O número de revisões guardadas é controlado por <code style="font-family:'JetBrains Mono',monospace;color:var(--accent3);background:rgba(74,158,255,.08);padding:.1rem .35rem;border-radius:4px;">revisionHistoryLimit</code> (padrão: 10). Passado esse limite, a revisão antiga se perde e não pode mais ser restaurada com <em>undo</em>.</li>
+  </ul>
+
+  <div class="callout callout-block">
+    <div class="callout-title">Armadilha comum</div>
+    <p>O rollback muda o estado do cluster, mas <strong>não corrige o arquivo YAML de origem</strong>. Se o pipeline reaplicar o YAML antigo (com bug), o cluster volta pro estado ruim — a menos que o Git também seja corrigido, mantendo cluster e repositório sincronizados.</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 5: ETCD + RUNTIME -->
+<section id="runtime">
+  <div class="section-label">// 05 — camadas 3 e 4</div>
+  <h2>etcd e dados de runtime</h2>
+
+  <h3>etcd — o que é e quando entra (Camada 3)</h3>
+  <ul class="plain">
+    <li><strong>etcd é o único componente com estado</strong> do Kubernetes: guarda todos os objetos de API (Deployments, Services, ConfigMaps, Secrets, RBAC).</li>
+    <li>Um backup do etcd é suficiente para restaurar o cluster inteiro.</li>
+    <li>Restaurar um snapshot é <strong>invasivo</strong>: exige parar o <code style="font-family:'JetBrains Mono',monospace;color:var(--accent3);background:rgba(74,158,255,.08);padding:.1rem .35rem;border-radius:4px;">kube-apiserver</code> e o etcd, mover o diretório de dados antigo, restaurar o snapshot em um novo diretório e só então reiniciar os serviços.</li>
+    <li>Usado em cenários de falha catastrófica do control plane, migração de cluster, ou erro humano que afetou múltiplas aplicações — <strong>não</strong> é o mecanismo usado para reverter o deploy de uma única aplicação.</li>
+  </ul>
+
+  <h3>Dados de runtime e o padrão Expand-Contract (Camada 4)</h3>
+  <p><strong>Runtime</strong> = qualquer dado criado ou modificado enquanto a aplicação está em execução (registros de banco, uploads, sessões, cache, logs). Esses dados não voltam sozinhos quando você reverte a imagem — é o ponto mais arriscado do rollback.</p>
+
+  <div class="flow">
+    <div class="flow-step highlight">
+      <div class="step-icon">1️⃣</div>
+      <div class="step-title">Expand</div>
+      <div class="step-desc">Adiciona novos elementos de schema ao lado dos existentes, sem quebrar nada.</div>
+    </div>
+    <div class="flow-step blue">
+      <div class="step-icon">2️⃣</div>
+      <div class="step-title">Migrate</div>
+      <div class="step-desc">Transiciona dados e lógica gradualmente para o novo schema.</div>
+    </div>
+    <div class="flow-step warn">
+      <div class="step-icon">3️⃣</div>
+      <div class="step-title">Contract</div>
+      <div class="step-desc">Remove os elementos antigos — só depois que a migração está validada.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Regra-chave: N / N-1</div>
+    <p>A versão nova da aplicação deve ser compatível com o schema anterior, e vice-versa. <strong>Limitação importante:</strong> cada etapa individual pode ser revertida, mas reverter várias etapas de uma vez não é garantido.</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 6: MERGE VS RELEASE + GITOPS -->
+<section id="gitops">
+  <div class="section-label">// 06 — o gatilho do deploy</div>
+  <h2>Merge, tag, release — e onde entra o GitOps</h2>
+  <p>Antes de disparar um deploy (e, futuramente, um rollback), é preciso saber exatamente <em>o que</em> dispara <em>o quê</em>.</p>
+
+  <div class="fn-grid">
+    <div class="fn-card">
+      <div class="fn-sig">merge na main</div>
+      <p class="fn-desc">Avança o código. É o gatilho mais comum de deploy contínuo (ex: deploy automático em staging).</p>
+    </div>
+    <div class="fn-card">
+      <div class="fn-sig">tag</div>
+      <p class="fn-desc">Um "apelido fixo" para um commit específico. Diferente de uma branch (que se move), a tag aponta sempre para o mesmo commit.</p>
+    </div>
+    <div class="fn-card">
+      <div class="fn-sig">release</div>
+      <p class="fn-desc">Uma tag "vestida" pela interface do GitHub: changelog, anexos, marcação de versão estável.</p>
+    </div>
+  </div>
+
+  <p><strong>Padrão comum em empresas maduras:</strong> merge na main → deploy automático em dev/staging; criação de release/tag → deploy (manual ou automático) em produção.</p>
+
+  <h3>Onde isso se conecta com GitOps / ArgoCD</h3>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-icon">🏗️</div>
+      <div class="step-title">CI builda</div>
+      <div class="step-desc">A imagem é publicada em um registry.</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-icon">📁</div>
+      <div class="step-title">Repo de config</div>
+      <div class="step-desc">Guarda os manifests (YAML / Helm / Kustomize) separado do código.</div>
+    </div>
+    <div class="flow-step blue highlight">
+      <div class="step-icon">🔁</div>
+      <div class="step-title">ArgoCD puxa</div>
+      <div class="step-desc">Monitora o repo e faz <em>pull</em> das mudanças — ao contrário de pipelines que empurram (push).</div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Rollback no ArgoCD, na prática</div>
+    <p>É uma operação Git: reverter um commit no repositório de configuração, ou usar o histórico de sync da própria ferramenta.</p>
+  </div>
+</section>
+
+<!-- SEÇÃO 7: COMO APLICAR -->
+<section id="aplicar">
+  <div class="section-label">// 07 — na prática</div>
+  <h2>Como aplicar — 7 passos</h2>
+
+  <ul class="changes-list">
+    <li>
+      <span class="change-num">01</span>
+      <div class="change-content">
+        <strong>Versionar tudo</strong>
+        <p>Código, configurações e schema de banco de dados precisam ter histórico de versões — senão não existe "estado anterior" pra voltar.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">02</span>
+      <div class="change-content">
+        <strong>Escolher a estratégia de deploy certa</strong>
+        <p>A forma como você publica já define quão fácil é reverter: blue-green (troca instantânea entre dois ambientes), canary (libera pra poucos usuários primeiro) ou rolling (substitui aos poucos).</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">03</span>
+      <div class="change-content">
+        <strong>Automatizar no pipeline de CI/CD</strong>
+        <p>Rollback não deve depender de alguém lembrar o comando certo sob pressão — deve ser um botão/comando único ou disparado automaticamente.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">04</span>
+      <div class="change-content">
+        <strong>Definir critérios objetivos de quando reverter</strong>
+        <p>Ex: "se erro passar de 2%, reverte automaticamente". Isso é decidido antes do deploy, não durante o incidente.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">05</span>
+      <div class="change-content">
+        <strong>Garantir compatibilidade no banco de dados</strong>
+        <p>Usar o padrão expand-contract — a estrutura nova sem remover a antiga até ter certeza de que não vai precisar reverter.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">06</span>
+      <div class="change-content">
+        <strong>Monitorar com métricas e alertas</strong>
+        <p>Sem observabilidade (logs, dashboards), o time nem percebe que precisa reverter a tempo.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">07</span>
+      <div class="change-content">
+        <strong>Testar o processo regularmente</strong>
+        <p>Simular falhas de propósito pra garantir que o rollback funciona quando for realmente necessário.</p>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<!-- SEÇÃO 8: INTERDISCIPLINAR — INVENTRA -->
+<section id="inventra">
+  <div class="section-label">// 08 — interdisciplinar</div>
+  <h2>Como usaremos no Inventra</h2>
+
+  <div class="callout callout-ok">
+    <div class="callout-title">Como</div>
+    <p>O rollback deployment será aplicado no CI/CD do Inventra, após o processo de deploy de uma nova versão. Depois que o pipeline realizar o deploy, serão feitas validações para verificar se a aplicação está funcionando corretamente. Caso a nova versão apresente uma falha crítica, o pipeline poderá retornar automaticamente ou manualmente para a última versão estável, evitando que uma versão defeituosa permaneça em produção.</p>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Onde</div>
+    <p>Cada versão do Inventra deverá ser identificada e mantida no histórico do repositório, permitindo que o pipeline de CI/CD saiba qual era a versão estável anterior.</p>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="filename">exemplo — rollback no Inventra</span>
+      <span class="lang-badge">fluxo</span>
+    </div>
+    <pre><span class="cm"># versão v1.2.0 apresenta problema após o deploy</span>
+deploy(<span class="str">"v1.2.0"</span>)  <span class="cm"># falha crítica detectada</span>
+rollback(<span class="fn">para</span>=<span class="str">"v1.1.0"</span>)  <span class="cm"># pipeline restaura a última versão estável</span>
+
+<span class="cm"># o processo também considera MongoDB e Redis,</span>
+<span class="cm"># para evitar que uma alteração incompatível</span>
+<span class="cm"># impeça a versão anterior de funcionar</span></pre>
+  </div>
+</section>
+
+<!-- SEÇÃO 9: COMO É NO TRABALHO -->
+<section id="trabalho">
+  <div class="section-label">// 09 — cenário real de mercado</div>
+  <h2>Abordagem GitOps com Argo CD</h2>
+
+  <h3>O papel da prevenção: CI/CD e GMUD</h3>
+  <p>Na maioria absoluta dos casos, um erro fatal em produção já é evitado pelas práticas de DevOps:</p>
+  <ul class="plain">
+    <li><strong>CI/CD</strong> (Continuous Integration / Continuous Deployment) — garante que o código passe por testes automatizados, análise de qualidade e validações de segurança antes de ser empacotado.</li>
+    <li><strong>GMUD</strong> (Gestão de Mudanças) — adiciona uma camada de aprovação humana e estratégica. Exige plano detalhado, data, descrição do impacto e, obrigatoriamente, um plano de rollback.</li>
+  </ul>
+  <p>Porém, essas práticas garantem <strong>99%</strong> de segurança. O <strong>1%</strong> restante envolve variáveis imprevisíveis de produção (falhas de rede, comportamento anômalo com dados reais, gargalos de infraestrutura). Para esse 1%, o plano de rollback abaixo é executado.</p>
+
+  <h3>Passo a passo do rollback (GitOps)</h3>
+  <p>Quando a versão <strong>9.0.0</strong> apresenta falha crítica em produção, o fluxo de reversão segue os princípios de GitOps:</p>
+
+  <ul class="changes-list">
+    <li>
+      <span class="change-num">01</span>
+      <div class="change-content">
+        <strong>Identificação e ação no repositório de infraestrutura</strong>
+        <p>O monitoramento alerta sobre o incidente com a versão 9.0.0. A equipe acessa o repositório de infraestrutura, localiza o YAML do Deployment afetado e altera manualmente a tag da imagem de 9.0.0 para a versão anterior estável, 8.4.4.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">02</span>
+      <div class="change-content">
+        <strong>Pull Request (PR) e aprovação</strong>
+        <p>A alteração na tag gera um PR. Um colega da equipe revisa rapidamente para garantir que a sintaxe e a tag estão corretas. O PR é aprovado e o merge é feito na branch principal do repositório de infraestrutura.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">03</span>
+      <div class="change-content">
+        <strong>Sincronização automática pelo Argo CD</strong>
+        <p>O Argo CD, que observa continuamente a branch principal, detecta a mudança (configuration drift): o estado desejado no Git agora exige a 8.4.4, mas o cluster está rodando a 9.0.0. Ele orquestra a criação de novos Pods com a 8.4.4 e, assim que estiverem saudáveis, encerra os Pods quebrados da 9.0.0.</p>
+      </div>
+    </li>
+    <li>
+      <span class="change-num">04</span>
+      <div class="change-content">
+        <strong>Validação de produção</strong>
+        <p>A equipe verifica os endpoints da aplicação em produção e confirma que o sistema voltou a operar com a versão 8.4.4. O incidente é mitigado.</p>
+      </div>
+    </li>
+  </ul>
+
+  <h3>Imutabilidade: por que não apagamos a tag 9.0.0?</h3>
+  <p>Mesmo após o rollback, a tag 9.0.0 <strong>jamais é apagada</strong> do repositório de código-fonte. O motivo é imutabilidade e rastreabilidade:</p>
+
+  <div class="fn-grid">
+    <div class="fn-card">
+      <div class="fn-sig">📜 Histórico</div>
+      <p class="fn-desc">A tag quebrada serve como documentação viva — prova que os desenvolvedores tentaram a entrega e que houve um erro específico naquele exato código.</p>
+    </div>
+    <div class="fn-card">
+      <div class="fn-sig">🔎 Post-mortem</div>
+      <p class="fn-desc">A equipe precisará baixar o código exato da 9.0.0 para debugar, entender o que falhou em produção e aplicar a correção.</p>
+    </div>
+    <div class="fn-card">
+      <div class="fn-sig">🌱 Evolução</div>
+      <p class="fn-desc">Quando o erro for corrigido, uma nova tag será gerada (ex: 9.0.1 ou 9.1.0). A história do repositório permanece intacta.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SEÇÃO 10: CONSEQUÊNCIAS -->
+<section id="consequencias">
+  <div class="section-label">// 10 — o custo de não ter um plano</div>
+  <h2>Consequências da ausência de rollback</h2>
+  <p>A ausência de um plano de rollback estruturado traz consequências críticas para a operação de tecnologia:</p>
+
+  <div class="cons-grid">
+    <div class="cons-card">
+      <div class="cons-icon">⏱️</div>
+      <div>
+        <strong>Downtime prolongado</strong>
+        <p>Sem uma reversão rápida e preparada, falhas em produção geram interrupções de serviço severas e comprometem a experiência do usuário.</p>
+      </div>
+    </div>
+    <div class="cons-card">
+      <div class="cons-icon">🗄️</div>
+      <div>
+        <strong>Risco à integridade dos dados</strong>
+        <p>Atualizações malsucedidas (especialmente em bancos de dados relacionais) podem causar corrupção, resíduos indesejados ou perda irreversível de informações.</p>
+      </div>
+    </div>
+    <div class="cons-card">
+      <div class="cons-icon">🔥</div>
+      <div>
+        <strong>Sobrecarga e estresse da equipe</strong>
+        <p>Sem um fluxo automatizado de retorno, engenharia e suporte investigam problemas sob extrema pressão, dependendo de "salas de guerra" e conhecimento informal de especialistas.</p>
+      </div>
+    </div>
+    <div class="cons-card">
+      <div class="cons-icon">📉</div>
+      <div>
+        <strong>Capacidade de entrega desperdiçada</strong>
+        <p>O tempo gasto diagnosticando falhas e desfazendo alterações consome energia que deveria ir para novas funcionalidades — reduz o throughput e desalinha o planejamento de metas.</p>
+      </div>
+    </div>
+    <div class="cons-card">
+      <div class="cons-icon">💔</div>
+      <div>
+        <strong>Prejuízo à credibilidade</strong>
+        <p>A instabilidade frequente e a demora na resolução de incidentes prejudicam a confiança de clientes e stakeholders no produto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEÇÃO 11: CASOS REAIS -->
+<section id="casos">
+  <div class="section-label">// 11 — quando um deployment dá errado</div>
+  <h2>Casos reais</h2>
+  <p>Para entender de verdade a importância do rollback, vale olhar para situações que aconteceram no mercado. Talvez o mais interessante seja perceber que um problema de deployment quase sempre precisa ser corrigido rápido — mas às vezes uma pequena alteração é suficiente para descambar numa crise.</p>
+
+  <div class="example-box">
+    <div class="example-header">
+      <span class="ex-badge">CASO 1</span>
+      GitHub — maio de 2023
+    </div>
+    <div class="example-body">
+      <p>No dia 10 de maio, o GitHub realizou uma alteração de configuração em um serviço interno responsável pelo gerenciamento dos bancos de dados do Git. A alteração tinha, inclusive, um objetivo positivo: evitar a saturação de conexões e já havia funcionado em outras partes da infraestrutura.</p>
+      <p>Porém, logo depois do início da distribuição da mudança, o cluster de banco de dados sofreu uma falha de <em>failover</em>. O sistema começou a apresentar problemas para realizar leituras e gravações.</p>
+      <p>Os engenheiros perceberam a instabilidade rapidamente e tentaram reverter a alteração. E aqui está o ponto mais importante para a nossa apresentação: <strong>o rollback também falhou</strong>, por causa de um erro de infraestrutura interna.</p>
+      <p>A equipe tinha identificado o problema e sabia qual era a ação esperada — voltar para uma configuração anterior. Mas a própria ferramenta que deveria servir como espécie de "saída de emergência" não funcionou. Isso fez com que a recuperação precisasse seguir um caminho muito mais complexo e manual: o GitHub realizou um failover gradual até conseguir restabelecer as operações.</p>
+      <p>O impacto foi grande: vários serviços da plataforma foram afetados, desenvolvedores tiveram problemas para ler e gravar dados, e pull requests e GitHub Actions também foram prejudicados. A investigação também encontrou problemas relacionados à versão do banco de dados utilizada naquele cluster e à sua configuração específica — corrigidos e reportados posteriormente aos mantenedores do banco.</p>
+      <p><strong>A lição:</strong> <span class="stat">não basta ter um rollback; é preciso garantir que ele realmente funcione quando tudo estiver dando errado.</span></p>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="example-header">
+      <span class="ex-badge">CASO 2</span>
+      Knight Capital — 2012
+    </div>
+    <div class="example-body">
+      <p>A Knight Capital era uma grande empresa do mercado financeiro americano, responsável por movimentar bilhões de dólares em negociações todos os dias. Para participar de um novo programa da bolsa de valores, a empresa precisava realizar um deployment em seu sistema de negociação — mas um dos oito servidores não recebeu corretamente o novo código.</p>
+      <p>Esse servidor ainda possuía uma funcionalidade antiga, chamada <em>Power Peg</em>, que havia sido desativada anos antes, mas continuava presente no sistema. Quando o mercado abriu, uma nova funcionalidade acabou ativando esse código antigo. O sistema começou a enviar ordens de compra e venda de maneira descontrolada.</p>
+      <p>Em poucos minutos, os engenheiros perceberam que havia algo muito errado. Mas eles não tinham um processo de rollback automatizado e seguro para aquela situação. Na tentativa de resolver o problema, a equipe removeu manualmente o novo código dos outros servidores que ainda estavam funcionando corretamente — e esse é o detalhe mais importante: <strong>a tentativa de rollback acabou espalhando o problema</strong>. O que estava inicialmente limitado a um servidor passou a afetar toda a infraestrutura de negociação.</p>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num">45 min</div>
+          <div class="stat-lbl">tempo até a intervenção</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">$440M</div>
+          <div class="stat-lbl">prejuízo aproximado</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">8</div>
+          <div class="stat-lbl">servidores, 1 mal atualizado</div>
+        </div>
+      </div>
+
+      <p>Em aproximadamente 45 minutos, a Knight Capital acumulou bilhões de dólares em posições indesejadas e sofreu um prejuízo de aproximadamente <strong>$440 milhões</strong>. A empresa precisou receber uma injeção emergencial de capital e perdeu sua independência poucos meses depois, sendo posteriormente adquirida.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-block">
+    <div class="callout-title">O que os dois casos têm em comum</div>
+    <p>No GitHub, o problema foi identificado rapidamente, mas o rollback não funcionou como esperado. Na Knight Capital, a empresa tentou reverter a situação manualmente, mas a ausência de um processo de rollback seguro contribuiu para agravar o problema. São situações diferentes, mas que apontam para a mesma conclusão: <strong>rollback não pode ser tratado como um detalhe que só será pensado quando alguma coisa der errado</strong> — ele precisa fazer parte do próprio planejamento do deployment.</p>
+  </div>
+
+  <p>Um bom processo precisa saber para qual versão voltar, como realizar essa reversão, como verificar se ela funcionou e, principalmente, precisa testar esse procedimento antes de depender dele em uma situação real. Porque, no fim, um deployment não termina quando colocamos uma nova versão em produção — ele termina quando temos segurança de que, se algo der errado, conseguimos recuperar o sistema.</p>
+
+  <div class="sources">
+    <div class="section-label">Fontes citadas nos casos reais</div>
+    <a href="https://github.blog/news-insights/company-news/github-availability-report-may-2023/" target="_blank" rel="noopener">github.blog/news-insights/company-news/github-availability-report-may-2023</a>
+    <a href="https://postmortem.io/incidents/github--2023-05-18--addressing-githubs-recent-availability-issues" target="_blank" rel="noopener">postmortem.io/incidents/github--2023-05-18--addressing-githubs-recent-availability-issues</a>
+    <a href="https://sre.google" target="_blank" rel="noopener">soundofdevelopment.substack.com/p/the-knight-capital-disaster-how-a</a>
+    <a href="https://www.sec.gov/newsroom/press-releases/2013-222" target="_blank" rel="noopener">sec.gov/newsroom/press-releases/2013-222</a>
+    <a href="https://en.wikipedia.org/wiki/Knight_Capital_Group" target="_blank" rel="noopener">en.wikipedia.org/wiki/Knight_Capital_Group</a>
+  </div>
+</section>
+
+<!-- SEÇÃO FINAL -->
+<section id="fim">
+  <div class="closing">
+    <div class="closing-icon">🛟</div>
+    <div>
+      <div class="closing-label">// Para levar da apresentação</div>
+      <div class="closing-title">Rollback não é plano B improvisado — é parte essencial do plano de produção</div>
+      <p class="closing-desc">Reduz o tempo de exposição a uma falha, diminui o impacto para os usuários e dá à equipe uma maneira controlada de recuperar um sistema que apresentou problemas. Fazer um deployment e colocar uma mudança em um sistema real é garantir que, se essa mudança não funcionar, ainda existe uma forma segura de voltar.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Rollback Deployment — Trabalho de DevOps &nbsp;·&nbsp; Kubernetes + GitOps/ArgoCD + Expand-Contract &nbsp;·&nbsp; recuperação segura de incidentes
+</footer>
+
+</body>
+</html>
